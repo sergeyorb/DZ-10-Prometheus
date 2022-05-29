@@ -21,6 +21,13 @@ cp prometheus promtool /usr/local/bin/
 cp -r console_libraries consoles prometheus.yml /etc/prometheus
   - Создал пользователя от которого бедет запускаться система мониторинга
 useradd --no-create-home --shell /bin/false prometheus
+  - Задал владельца для каталогов которые создал ранее
+chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus
+  - Задал владельца для скопированных файлов
+chown prometheus:prometheus /usr/local/bin/{prometheus,promtool}
+  - Запустил м проверил работу Prometheus   
+/usr/local/bin/prometheus --config.file /etc/prometheus/prometheus.yml --storage.tsdb.path /var/lib/prometheus/ --
+web.console.templates=/etc/prometheus/consoles --web.console.libraries=/etc/prometheus/console_libraries
 
-  
+systemctl status prometheus  
 </ul>  
