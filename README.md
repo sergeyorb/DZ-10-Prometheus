@@ -3,7 +3,8 @@
 <ol>
 <li>Установка Prometheus</li>
 <li>Установка Alertmanager</li>
-<li>Установка node_exporter</li>  
+<li>Установка node_exporter</li> 
+<li>Отображение метрик с node_exporter в консоли prometheus</li> 
 </ol>  
 
 # Установка Prometheus
@@ -217,5 +218,23 @@
 
 <p>Открываем веб-браузер и переходим по адресу http://<IP-адрес сервера или клиента>:9100/metrics — мы увидим метрики, собранные node_exporter:
 <p>![image](https://user-images.githubusercontent.com/98658046/174866752-a76f974a-1f7f-4528-9726-7e9a23921461.png)
- 
 </ul>
+ 
+# Отображение метрик с node_exporter в консоли prometheus
+<ul>
+<p>-Открываем конфигурационный файл prometheus:
+<p>vi /etc/prometheus/prometheus.yml
+<p>В разделе scrape_configs добавим:
+
+<p>scrape_configs:
+<p>  ...
+<p>  - job_name: 'node_exporter_clients'
+<p>    scrape_interval: 5s
+<p>    static_configs:
+<p>      - targets: ['192.168.0.14:9100','192.168.0.15:9100']
+<p>* в данном примере мы добавили клиента с IP-адресом 192.168.0.14, рабочее название для группы клиентов node_exporter_clients. Для примера, мы также добавили клиента <p>192.168.0.15 — чтобы продемонстрировать, что несколько клиентов добавляется через запятую.
+<p>Чтобы настройка вступила в действие, перезагружаем наш сервис prometheus:
+
+<p>systemctl restart prometheus![image](https://user-images.githubusercontent.com/98658046/174867809-340a83e9-c3b7-4d51-9244-82bb855713a5.png)
+ 
+</ul> 
