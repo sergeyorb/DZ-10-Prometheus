@@ -9,27 +9,90 @@
 # Установка Prometheus
 
 <ul>
-<p>- Загрузил пакет 
+<p>-загрузка пакета
 <p>wget https://github.com/prometheus/prometheus/releases/download/v2.20.1/prometheus-2.20.1.linux-amd64.tar.gz
-<p>  - Создал каталоги для Prometheus
+
+<p>-Установка (копирование файлов)
+<p>После того, как мы скачали архив prometheus, необходимо его распаковать и скопировать содержимое по разным каталогам.
+
+<p>Для начала создаем каталоги, в которые скопируем файлы для prometheus:
 <p>mkdir /etc/prometheus
-<p>mkdir /var/lib/prometheus![image](https://user-images.githubusercontent.com/98658046/170860945-38b4451a-0dc7-4bb7-9ddc-596b8b5fe3be.png)
-<p>  - Распаковал архив
+<p>mkdir /var/lib/prometheus
+
+<p>-Распакуем наш архив:
 <p>tar zxvf prometheus-*.linux-amd64.tar.gz
-<p>  - Распределил файлы по каталогам
+
+<p>... и перейдем в каталог с распакованными файлами:
+<p>cd prometheus-*.linux-amd64
+
+<p>Распределяем файлы по каталогам:
 <p>cp prometheus promtool /usr/local/bin/
 <p>cp -r console_libraries consoles prometheus.yml /etc/prometheus
-<p>  - Создал пользователя от которого бедет запускаться система мониторинга
-<p>useradd --no-create-home --shell /bin/false prometheus
-<p>  - Задал владельца для каталогов которые создал ранее
-<p>chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus
-<p>  - Задал владельца для скопированных файлов
-<p>chown prometheus:prometheus /usr/local/bin/{prometheus,promtool}
-<p>  - Запустил м проверил работу Prometheus   
-<p>/usr/local/bin/prometheus --config.file /etc/prometheus/prometheus.yml --storage.tsdb.path /var/lib/prometheus/ --
-<p>web.console.templates=/etc/prometheus/consoles --web.console.libraries=/etc/prometheus/console_libraries
 
-<p>systemctl status prometheus  
+<p>-Назначение прав
+<p>Создаем пользователя, от которого будем запускать систему мониторинга:
+<p>useradd --no-create-home --shell /bin/false prometheus
+<p>* мы создали пользователя prometheus без домашней директории и без возможности входа в консоль сервера.
+
+<p>-Задаем владельца для каталогов, которые мы создали на предыдущем шаге:
+<p>chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus
+
+<p>-Задаем владельца для скопированных файлов:
+<p>chown prometheus:prometheus /usr/local/bin/{prometheus,promtool}
+
+<p>-Запуск и проверка
+<p>Запускаем prometheus командой:
+<p>/usr/local/bin/prometheus --config.file /etc/prometheus/prometheus.yml --storage.tsdb.path /var/lib/prometheus/ --
+
+<p>web.console.templates=/etc/prometheus/consoles --web.console.libraries=/etc/prometheus/console_libraries
+<p>... мы увидим лог запуска — в конце «Server is ready to receive web requests»:
+
+<p>level=info ts=2019-08-07T07:39:06.849Z caller=main.go:621 msg="Server is ready to receive web requests."
+<p>Открываем веб-браузер и переходим по адресу http://<IP-адрес сервера>:9090 — загрузится консоль Prometheus:
+
+<p>-Автозапуск
+<p>Для настройки автоматического старта Prometheus мы создадим новый юнит в systemd.
+<p>Создаем файл prometheus.service:
+<p>vi /etc/systemd/system/prometheus.service
+<p>Или
+<p>sudo systemctl edit --full --force prometheus.service
+
+
+<p>[Unit]
+<p>Description=Prometheus Service
+<p>After=network.target
+
+<p>[Service]
+<p>User=prometheus
+<p>Group=prometheus
+<p>Type=simple
+<p>ExecStart=/usr/local/bin/prometheus \
+<p>--config.file /etc/prometheus/prometheus.yml \
+<p>--storage.tsdb.path /var/lib/prometheus/ \
+<p>--web.console.templates=/etc/prometheus/consoles \
+<p>--web.console.libraries=/etc/prometheus/console_libraries
+<p>ExecReload=/bin/kill -HUP $MAINPID
+<p>Restart=on-failure
+
+<p>[Install]
+<p>WantedBy=multi-user.target
+
+<p>-Перечитываем конфигурацию systemd:
+<p>systemctl daemon-reload
+
+<p>-1Разрешаем автозапуск:
+<p>systemctl enable prometheus
+
+<p>После ручного запуска мониторинга, который мы делали для проверки, могли сбиться права на папку библиотек — снова зададим ей владельца:
+<p>chown -R prometheus:prometheus /var/lib/prometheus
+
+<p>Запускаем службу:
+<p>systemctl start prometheus
+
+<p>... и проверяем, что она запустилась корректно:
+<p>systemctl status prometheus
+<p>![image](https://user-images.githubusercontent.com/98658046/174864651-80e75c64-ce0a-46ae-8d5c-926468819b56.png)
+
 </ul>  
 
 # Установка Alertmanager
