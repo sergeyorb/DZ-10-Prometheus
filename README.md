@@ -4,7 +4,8 @@
 <li>Установка Prometheus</li>
 <li>Установка Alertmanager</li>
 <li>Установка node_exporter</li> 
-<li>Отображение метрик с node_exporter в консоли prometheus</li> 
+<li>Отображение метрик с node_exporter в консоли prometheus</li>
+<li>Отображение тревог</li> 
 </ol>  
 
 # Установка Prometheus
@@ -236,5 +237,42 @@
 <p>Чтобы настройка вступила в действие, перезагружаем наш сервис prometheus:
 
 <p>systemctl restart prometheus![image](https://user-images.githubusercontent.com/98658046/174867809-340a83e9-c3b7-4d51-9244-82bb855713a5.png)
- 
 </ul> 
+
+ # Отображение тревог
+ <ul>
+<p>-Создадим простое правило, реагирующее на недоступность клиента.
+<p>Создаем файл с правилом:
+
+<p>vi /etc/prometheus/alert.rules.yml
+
+<p>groups:
+<p> - name: alert.rules
+<p>  rules:
+<p>  - alert: InstanceDown
+<p>    expr: up == 0
+<p>    for: 1m
+<p>    labels:
+<p>      severity: critical
+<p>    annotations:
+<p>      description: '{{ $labels.instance }} of job {{ $labels.job }} has been down
+<p>        for more than 1 minute.'
+<p>      summary: Instance {{ $labels.instance }} down
+
+<p>-Теперь подключим наше правило в конфигурационном файле prometheus:
+<p>vi /etc/prometheus/prometheus.yml
+
+<p>rule_files:
+<p>  # - "first_rules.yml"
+<p>  # - "second_rules.yml"
+<p>  - "alert.rules.yml"
+
+<p>* в данном примере мы добавили наш файл alert.rules.yml в секцию rule_files. Закомментированные файлы first_rules.yml и second_rules.yml уже были в файле в качестве <p>примера.
+
+<p>-Перезапускаем сервис:
+<p>systemctl restart prometheus
+
+<p>Открываем веб-консоль прометеуса и переходим в раздел Alerts. Если мы добавим клиента и попробуем его отключить для примера, мы увидим тревогу:
+<p>![image](https://user-images.githubusercontent.com/98658046/174868213-8fbac487-629f-40c5-a7a0-63f8509b4ef7.png)
+ 
+ </ul>
