@@ -5,7 +5,9 @@
 <li>Установка Alertmanager</li>
 <li>Установка node_exporter</li> 
 <li>Отображение метрик с node_exporter в консоли prometheus</li>
-<li>Отображение тревог</li> 
+<li>Отображение тревог</li>
+<li>Мониторинг служб Linux</li>
+
 </ol>  
 
 # Установка Prometheus
@@ -276,3 +278,55 @@
 <p>![image](https://user-images.githubusercontent.com/98658046/174868213-8fbac487-629f-40c5-a7a0-63f8509b4ef7.png)
  
  </ul>
+
+ # Мониторинг служб Linux
+ <ul>
+<p>Для мониторинга сервисов с помощью Prometheus мы настроим сбор метрик и отображение тревог.
+<p>-Сбор метрие с помощью node_exporter
+<p>Открываем сервис, созданный для node_exporter:
+<p>vi /etc/systemd/system/node_exporter.service
+<p>... и добавим к ExecStart:
+<p>...
+<p>ExecStart=/usr/local/bin/node_exporter --collector.systemd
+<p>...
+<p>* данная опция указывает экспортеру мониторить состояние каждой службы.
+<p>При необходимости, мы можем либо мониторить отдельные службы, добавив опцию collector.systemd.unit-whitelist:
+<p>ExecStart=/usr/local/bin/node_exporter --collector.systemd --collector.systemd.unit-whitelist="(chronyd|mariadb|nginx).service"
+<p>* в данном примере будут мониториться только сервисы chronyd, mariadb и nginx.
+<p>... либо наоборот — мониторить все службы, кроме отдельно взятых:
+<p>ExecStart=/usr/local/bin/node_exporter --collector.systemd --collector.systemd.unit-blacklist="(auditd|dbus|kdump).service"
+<p>* при такой настройке мы запретим мониторинг сервисов auditd, dbus и kdump.
+<p>Чтобы применить настройки, перечитываем конфиг systemd:
+<p>systemctl daemon-reload
+<p>Перезапускаем node_exporter:
+<p>systemctl restart node_exporter
+<p>-Отображение тревог
+<p>Настроим мониторинг для службы NGINX.
+<p>Создаем файл с правилом:
+<p>vi /etc/prometheus/services.rules.yml
+<p>groups:
+<p> - name: services.rules
+<p>  rules:
+<p>    - alert: nginx_service
+<p>      expr: node_systemd_unit_state{name="nginx.service",state="active"} == 0
+<p>      for: 1s
+<p>      annotations:
+<p>        summary: "Instance {{ $labels.instance }} is down"
+<p>        description: "{{ $labels.instance }} of job {{ $labels.job }} is down."
+<p>-Подключим файл с описанием правил в конфигурационном файле prometheus:
+<p>vi /etc/prometheus/prometheus.yml
+<p>...
+<p>rule_files:
+<p>  # - "first_rules.yml"
+<p>  # - "second_rules.yml"
+<p>  - "alert.rules.yml"
+<p>  - "services.rules.yml"
+<p> ...
+<p>* в данном примере мы добавили наш файл services.rules.yml к уже ранее добавленному alert.rules.yml в секцию rule_files.
+<p>Перезапускаем prometheus:
+<p>systemctl restart prometheus
+<p>Для проверки, остановим наш сервис:
+<p>systemctl stop nginx
+<p>В консоли Prometheus в разделе Alerts мы должны увидеть тревогу:
+<p>![image](https://user-images.githubusercontent.com/98658046/174869545-e5681e10-ef84-480a-8762-cb7dbd255669.png)
+ </ul> 
