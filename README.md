@@ -98,25 +98,71 @@
 # Установка Alertmanager
 
 <ul>
-<p>- Загрузил пакет
+<p>-используем ссылку для загрузки alertmanager:
 <p>Wget https://github.com/prometheus/alertmanager/releases/download/v0.21.0/alertmanager-0.21.0.linux-amd64.tar.gz
-<p>- Создал каталоги для Alertmanager
-<p>mkdir /etc/alertmanager /var/lib/prometheus/alertmanager![image](https://user-images.githubusercontent.com/98658046/170861381-f79f31d7-d0ab-4576-b279-7617cb68bfcb.png)
-<p>- Распаковал архив
+
+<p>-Установка
+<p>Создаем каталоги для alertmanager:
+<p>mkdir /etc/alertmanager /var/lib/prometheus/alertmanager
+
+<p>-Распакуем наш архив:
 <p>tar zxvf alertmanager-*.linux-amd64.tar.gz
-<p>- Распределил файлы по каталогам
+<p>... и перейдем в каталог с распакованными файлами:
+<p>cd alertmanager-*.linux-amd64
+
+<p>-Распределяем файлы по каталогам:
 <p>cp alertmanager amtool /usr/local/bin/
 <p>cp alertmanager.yml /etc/alertmanager
-<p>- Создал пользователя от которого бедет запускаться Alertmanager
+
+<p>-Назначение прав
+<p>Создаем пользователя, от которого будем запускать alertmanager:
 <p>useradd --no-create-home --shell /bin/false alertmanager
-<p>- Задал владельца для каталогов которые создал ранее
-<p>chown -R alertmanager:alertmanager /etc/alertmanager /var/lib/prometheus/alertmanager  
-<p>- Задал владельца для скопированных файлов 
+<p>* мы создали пользователя alertmanager без домашней директории и без возможности входа в консоль сервера.
+
+<p>-Задаем владельца для каталогов, которые мы создали на предыдущем шаге:
+<p>chown -R alertmanager:alertmanager /etc/alertmanager /var/lib/prometheus/alertmanager
+
+<p>-Задаем владельца для скопированных файлов:
 <p>chown alertmanager:alertmanager /usr/local/bin/{alertmanager,amtool}
-<p>- Запустил Alertmanager
+
+<p>-Автозапуск
+
+<p>-Создаем файл alertmanager.service в systemd:
+<p>vi /etc/systemd/system/alertmanager.service
+<p>Или
+<p>sudo systemctl edit --full --force alertmanager.service
+
+<p>[Unit]
+<p>Description=Alertmanager Service
+<p>After=network.target
+
+<p>[Service]
+<p>EnvironmentFile=-/etc/default/alertmanager
+<p>User=alertmanager
+<p>Group=alertmanager
+<p>Type=simple
+<p>ExecStart=/usr/local/bin/alertmanager \
+<p>          --config.file=/etc/alertmanager/alertmanager.yml \
+<p>          --storage.path=/var/lib/prometheus/alertmanager \
+<p>          $ALERTMANAGER_OPTS
+<p>ExecReload=/bin/kill -HUP $MAINPID
+<p>Restart=on-failure
+
+<p>[Install]
+<p>WantedBy=multi-user.target
+
+<p>-Перечитываем конфигурацию systemd:
+<p>systemctl daemon-reload
+
+<p>-Разрешаем автозапуск:
+<p>systemctl enable alertmanager
+
+<p>-Запускаем службу:
 <p>systemctl start alertmanager
-<p>- Проверил работу Alertmanager
-<p>systemctl start alertmanager
+
+<p>Открываем веб-браузер и переходим по адресу http://<IP-адрес сервера>:9093 — загрузится консоль alertmanager:
+<p>![image](https://user-images.githubusercontent.com/98658046/174865856-e55c630d-d10d-4208-a810-06839109f510.png)
+
 </ul>
 
 # Установка node_exporter
