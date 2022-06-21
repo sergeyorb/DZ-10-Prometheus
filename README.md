@@ -168,18 +168,54 @@
 # Установка node_exporter
 
 <ul>
-<p>- Загрузил пакет
+ <p>-Устанавливаем на сервер и клиент
+
 <p>wget https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
-<p>- Распаковал архив
+
 <p>tar zxvf  node_exporter-1.3.1.linux-amd64.tar.gz
-<p>- Скопировал исполняемый файл в bin
+
+<p>-Копируем исполняемый файл в bin:
+
 <p>cp node_exporter /usr/local/bin/
-<p>- Создал пользователя от которого бедет запускаться node_exporter
+
+<p>-Назначение прав
+<p>Создаем пользователя nodeusr:
 <p>useradd --no-create-home --shell /bin/false nodeusr
-<p>- Задал владельца для исполняевого файла
+
+<p>-Задаем владельца для исполняемого файла:
 <p>chown -R nodeusr:nodeusr /usr/local/bin/node_exporter
-<p>- Запустил node_exporter
+
+<p>-Автозапуск
+<p>vi /etc/systemd/system/node_exporter.service
+<p>Или
+<p>sudo systemctl edit --full --force node_exporter.service
+
+
+<p>[Unit]
+<p>Description=Node Exporter Service
+<p>After=network.target
+
+<p>[Service]
+<p>User=nodeusr
+<p>Group=nodeusr
+<p>Type=simple
+<p>ExecStart=/usr/local/bin/node_exporter
+<p>ExecReload=/bin/kill -HUP $MAINPID
+<p>Restart=on-failure
+
+<p>[Install]
+<p>WantedBy=multi-user.target
+
+<p>-Перечитываем конфигурацию systemd:
+<p>systemctl daemon-reload
+
+<p>-Разрешаем автозапуск:
+<p>systemctl enable node_exporter
+
+<p>-Запускаем службу:
 <p>systemctl start node_exporter
-<p>- Проверил работу node_exporter
-<p>systemctl status node_exporter  
+
+<p>Открываем веб-браузер и переходим по адресу http://<IP-адрес сервера или клиента>:9100/metrics — мы увидим метрики, собранные node_exporter:
+<p>![image](https://user-images.githubusercontent.com/98658046/174866752-a76f974a-1f7f-4528-9726-7e9a23921461.png)
+ 
 </ul>
